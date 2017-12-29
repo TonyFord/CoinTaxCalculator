@@ -78,7 +78,7 @@ function load_content( coin ){
     }
   );
 
-  var csv=csv_load( coin + "_sell.csv");
+  var csv=csv_load( "data/" + coin + "_sell.csv");
   CSV=csv.split("\n");
   JS=[];
 
