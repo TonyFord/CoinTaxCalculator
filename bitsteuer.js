@@ -53,7 +53,7 @@ var bestand=0;
 
 function load_content( coin ){
 
-  var csv=csv_load( coin + "_buy.csv");
+  var csv=csv_load( "data/" + coin + "_buy.csv");
   CSV=csv.split("\n");
   JB=[];
 
