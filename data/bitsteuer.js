@@ -53,15 +53,70 @@ var bestand=0;
 
 function load_content( coin ){
 
-  var csv=csv_load( "data/" + coin + "_buy.csv");
+  switch(coin.toUpperCase()){
+
+    case "SC":
+      coindesc="Siacoin";
+    break;
+    case "BTC":
+      coindesc="Bitcoin";
+    break;
+    case "BCH":
+      coindesc="Bitcoin Cash";
+    break;
+    case "BTG":
+      coindesc="Bitcoin Gold";
+    break;
+    case "DASH":
+      coindesc="Dash";
+    break;
+    case "DCR":
+      coindesc="Decred";
+    break;
+    case "ETH":
+      coindesc="Ethereum";
+    break;
+    case "FAIR":
+      coindesc="Faircoin";
+    break;
+    case "BLK":
+      coindesc="Blackcoin";
+    break;
+    case "MAID":
+      coindesc="Maidsafe";
+    break;
+    case "NAV":
+      coindesc="Navcoin";
+    break;
+    case "XRP":
+      coindesc="Ripple";
+    break;
+    case "XEM":
+      coindesc="NEM";
+    break;
+    case "MANNA":
+      coindesc="Manna";
+    break;
+    case "IOTA":
+      coindesc="IOTA";
+    break;
+    case "BSV":
+      coindesc="Bitcoin SV";
+    break;
+    case "AUR":
+      coindesc="Auroracoin";
+    break;
+
+  }
+
+  var csv=csv_load( coin + "_buy.csv");
   CSV=csv.split("\n");
   JB=[];
 
   CSV.forEach(
     function(a,i){
       var A=a.split(/,/g);
-      JB.push( { "date":A[0], "amount":parseFloat( A[1] ), "price":parseFloat( A[2] ), "info":A[3] } );
-
+      if( A[0] != '' && A[4] != '1' ) JB.push( { "date":A[0], "amount":parseFloat( A[1] ), "price":parseFloat( A[2] ), "info":A[3], "is_informal" : A[4] } );
     }
   );
 
@@ -78,14 +133,14 @@ function load_content( coin ){
     }
   );
 
-  var csv=csv_load( "data/" + coin + "_sell.csv");
+  var csv=csv_load( coin + "_sell.csv");
   CSV=csv.split("\n");
   JS=[];
 
   CSV.forEach(
     function(a,i){
       var A=a.split(/,/g);
-      JS.push( { "date":A[0], "amount":parseFloat( A[1] ), "price":parseFloat( A[2] ), "info":A[3] } );
+      if( A[0] != '' && A[4] != '1' ) JS.push( { "date":A[0], "amount":parseFloat( A[1] ), "price":parseFloat( A[2] ), "info":A[3], "is_informal" : A[4] } );
     }
   );
 
@@ -105,6 +160,7 @@ function load_content( coin ){
 
 
   var t="";
+  //t+="<h1>" + String.toUpperCase(coin) + " ( " + coindesc + " )</h1>";
   var pad="________";
 
   var id_open=0;
@@ -115,12 +171,45 @@ function load_content( coin ){
   var gvyear=0;
   var kaufyear=0;
   var verkaufyear=0;
+  var JBi=0;
+  var JSi=0;
 
 
-  while( id_open < JB.length-1 || JS.length-1 > 0 ){
 
-    var timestamp_=( id_open < JB.length - 1 ) ? JB[id_open].timestamp : timestamp_ + 1000*3600*24;
 
+  var timestamp_=0;
+  var flag_buy=false;
+
+  while( JBi < JB.length - 1 || JSi < JS.length - 1 ){
+    console.log( JBi, JSi );
+
+    if( JBi < JB.length ){
+      if( JS.length == 0 ){
+        console.log('1');
+        timestamp_=JB[JBi].timestamp;
+        flag_buy=true;
+      } else if ( ! JS[0].timestamp > 0 ){
+        console.log('2');
+        timestamp_=JB[JBi].timestamp;
+        flag_buy=true;
+      } else if( ((JS[JSi] != undefined ) ? JB[JBi].timestamp <= JS[JSi].timestamp : true ) ){
+        console.log('3');
+        timestamp_=JB[JBi].timestamp;
+        flag_buy=true;
+      } else {
+        console.log('4');
+        timestamp_=JS[JSi].timestamp;
+        flag_buy=false;
+      }
+    } else {
+      console.log('5');
+	     timestamp_=JS[JSi].timestamp;
+       flag_buy=false;
+    }
+
+    //var timestamp_=( id_open < JB.length - 1 ) ? JB[id_open].timestamp : timestamp_+1000*3600*24;
+    //var timestamp__=( JS.length > 0 ) ? JS[0].timestamp : timestamp_;
+    //	console.log( lastyear, new Date(timestamp_), new Date(timestamp__) );
 
     if( lastyear < new Date( timestamp_ ).getFullYear() ){
 
@@ -133,7 +222,9 @@ function load_content( coin ){
         t+="<div class=\"pagebreak\"> </div>";
       }
 
-      t+="<hr><h1>" + new Date( timestamp_ ).getFullYear() + "</h1><br>";
+      t+="<hr>";
+      t+="<h1>" + coin.toUpperCase() + " ( " + coindesc + " )</h1>";
+      t+="<h1>" + new Date( timestamp_ ).getFullYear() + "</h1><br>";
       lastyear=new Date( timestamp_ ).getFullYear();
       taxyear=0;
       gvyear=0;
@@ -143,13 +234,33 @@ function load_content( coin ){
     }
 
 
-//    while( ( JS.length > 0 ) ? JS[0].timestamp < JB[id_open].timestamp : false ){
 
-    while( ( JS.length > 0 ) ? JS[0].timestamp < timestamp_ : false ){
+    if( flag_buy ){
 
-      var a=JS[0];
+      if( id_open < JB.length - 1 ){
+        var c=JB[id_open];
 
-      while( JS[0].open > 0 && id_closed < JB.length-1 ){
+        t+="TRADE-ID:" + pad.slice( parseInt(id_open+1).toString().length ) + (id_open+1) + " [ eröffnet ]<br>";
+        var kauf=c.amount * c.price;
+        t+=pad.slice( parseInt( c.amount ).toString().length )  + "<b>" + c.amount.toFixed(8) + " " + coin.toUpperCase() + "</b><br>";
+        t+=c.date + " &nbsp;&nbsp;&nbsp;kauf zu " + pad.slice( parseInt( c.price ).toString().length ) + c.price.toFixed(2) + " EUR ( " + pad.slice( parseInt( kauf ).toString().length ) + (kauf).toFixed(2) + " EUR ) <i>" + c.info + "</i><br>";
+        t+="<br>";
+
+        bestand+=c.amount;
+
+        kaufyear+=kauf;
+
+        id_open++;
+
+        JBi++;
+
+      }
+
+    } else {
+
+      var a=JS[JSi];
+
+      while( JS[JSi].open > 0 && id_closed < JB.length-1 ){
 
         var b=JB[id_closed];
 
@@ -205,24 +316,8 @@ function load_content( coin ){
 
         }
       }
-
-      JS.shift();
-    }
-
-    if( id_open < JB.length -1 ){
-      var c=JB[id_open];
-
-      t+="TRADE-ID:" + pad.slice( parseInt(id_open+1).toString().length ) + (id_open+1) + " [ eröffnet ]<br>";
-      var kauf=c.amount * c.price;
-      t+=pad.slice( parseInt( c.amount ).toString().length )  + "<b>" + c.amount.toFixed(8) + " " + coin.toUpperCase() + "</b><br>";
-      t+=c.date + " &nbsp;&nbsp;&nbsp;kauf zu " + pad.slice( parseInt( c.price ).toString().length ) + c.price.toFixed(2) + " EUR ( " + pad.slice( parseInt( kauf ).toString().length ) + (kauf).toFixed(2) + " EUR ) <i>" + c.info + "</i><br>";
-      t+="<br>";
-
-      bestand+=c.amount;
-
-      kaufyear+=kauf;
-
-      id_open++;
+      JSi++;
+      //JS.shift();
     }
   }
   t+="<h3>Kauf...................: " + pad.slice( parseInt( kaufyear ).toString().length ) + kaufyear.toFixed(2) + " EUR</h3>";
