@@ -6,13 +6,12 @@ Coin trades win/loss calculator for german law.
 
 create a folder where the calculator want to be installed
 
-clone the project
+### Clone the project ( or download the zip file )
 
     git clone https://github.com/TonyFord/CoinTaxCalculator.git
 
-
 ## Usage
 
-open bitsteuer.html in browser like this and append ?coin=BTC|BLK|ETH...
+open index.html in browser
 
-    ...bitsteuer.html?coin=blk
+file upload the `<coin>_buy.csv` and `<coin>_sell.csv` and click the `Load` button

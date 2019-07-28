@@ -1,52 +1,87 @@
-$( document ).ready(function() {
-
-  load_content( getQueryVariable("coin") );
-
-
-});
-
-function getQueryVariable(variable)
+function handleFileSelect()
 {
-       var query = window.location.search.substring(1);
-       var vars = query.split("&");
-       for (var i=0;i<vars.length;i++) {
-               var pair = vars[i].split("=");
-               if(pair[0] == variable){return pair[1];}
-       }
-       if( variable == "coin" ){ return "btc"; } else { return(false); }
+  if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
+    alert('The File APIs are not fully supported in this browser.');
+    return;
+  }
 
+  input = document.getElementById('fileinput');
+  if (!input) {
+    alert("Um, couldn't find the fileinput element.");
+  }
+  else if (!input.files) {
+    alert("This browser doesn't seem to support the `files` property of file inputs.");
+  }
+  else if (!input.files[0]) {
+    alert("Please select a file before clicking 'Load'");
+  }
+  else {
+
+    CSV={ 'buy' : { 'coin' : '', 'data' : '', 'array' : [] }, 'sell' : { 'coin' : '', 'data' : '', 'array' : [] } };
+
+    file = document.getElementById('fileinput').files[0];
+    file2 = document.getElementById('fileinput2').files[0];
+
+    fr = new FileReader();
+    fr.onload = function(fr){ receivedText(file.name) }
+    fr.readAsText(file);
+
+    fr2 = new FileReader();
+    fr2.onload = function(fr2){ receivedText(file2.name) }
+    fr2.readAsText(file2);
+  }
 }
 
-function json_load( url ){
-  var json = null;
-  $.ajax({
-      'async': false,
-      'global': false,
-      'cache': false,
-      'url': url,
-      'dataType': "json",
-      'success': function (data) {
-          json = data;
+function receivedText(fn) {
+  var F=fn.split(/_/g);
+  if( F.length == 2 ){
+    FF=F[1].split(/\./g);
+    if( FF[0] == 'buy' || FF[0] == 'sell' ){
+      CSV[FF[0]].coin=F[0];
+      CSV[FF[0]].data=fr.result.split("\n");
+      CSV[FF[0]].array=[];
+
+      var J=CSV[FF[0]].array;
+
+      CSV[FF[0]].data.forEach(
+        function(a,i){
+          var A=a.split(/,/g);
+          if( A[0] != '' && A[4] != '1' ) J.push( { "date":A[0], "amount":parseFloat( A[1] ), "price":parseFloat( A[2] ), "info":A[3], "is_informal" : A[4] } );
+        }
+      );
+
+      J.forEach(
+        function(a,i){
+          J[i].timestamp = new Date(a.date.split(".").reverse().join("-")).getTime();
+          J[i].open=J[i].amount;
+        }
+      )
+
+      J.sort(
+        function(a,b){
+          return a.timestamp - b.timestamp;
+        }
+      );
+
+      if( FF[0] == 'buy'){
+        JB=CSV[FF[0]].array;
+      } else {
+        JS=CSV[FF[0]].array;
       }
-  });
-  return json;
-}
 
-function csv_load( url ){
-  var csv = null;
-  $.ajax({
-      'async': false,
-      'global': false,
-      'cache': false,
-      'url': url,
-      'dataType': "text",
-      'success': function (data) {
-          csv = data;
+      if( CSV['buy'].coin == CSV['sell'].coin && CSV['buy'].array.length > 0 && CSV['sell'].array.length > 0 ){
+        load_content( CSV['buy'].coin );
       }
-  });
-  return csv;
+
+    } else {
+      alert( 'filename must be in format <coin>_<buy|sell>.csv' );
+    }
+  } else {
+    alert( 'filename must be in format <coin>_<buy|sell>.csv' );
+  }
 }
 
+var CSV={};
 var JB=[];
 var JS=[];
 var bestand=0;
@@ -108,56 +143,6 @@ function load_content( coin ){
     break;
 
   }
-
-  var csv=csv_load( coin + "_buy.csv");
-  CSV=csv.split("\n");
-  JB=[];
-
-  CSV.forEach(
-    function(a,i){
-      var A=a.split(/,/g);
-      if( A[0] != '' && A[4] != '1' ) JB.push( { "date":A[0], "amount":parseFloat( A[1] ), "price":parseFloat( A[2] ), "info":A[3], "is_informal" : A[4] } );
-    }
-  );
-
-  //var JB=json_load("btx_buy.json");
-  JB.forEach(
-    function(a,i){
-      JB[i].timestamp = new Date(a.date.split(".").reverse().join("-")).getTime();
-      JB[i].open=JB[i].amount;
-    }
-  )
-  JB.sort(
-    function(a,b){
-      return a.timestamp - b.timestamp;
-    }
-  );
-
-  var csv=csv_load( coin + "_sell.csv");
-  CSV=csv.split("\n");
-  JS=[];
-
-  CSV.forEach(
-    function(a,i){
-      var A=a.split(/,/g);
-      if( A[0] != '' && A[4] != '1' ) JS.push( { "date":A[0], "amount":parseFloat( A[1] ), "price":parseFloat( A[2] ), "info":A[3], "is_informal" : A[4] } );
-    }
-  );
-
-  //var JS=json_load("btx_sell.json");
-  JS.forEach(
-    function(a,i){
-      JS[i].timestamp = new Date(a.date.split(".").reverse().join("-")).getTime();
-      JS[i].open=JS[i].amount;
-    }
-  )
-
-  JS.sort(
-    function(a,b){
-      return a.timestamp - b.timestamp;
-    }
-  );
-
 
   var t="";
   //t+="<h1>" + String.toUpperCase(coin) + " ( " + coindesc + " )</h1>";
