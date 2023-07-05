@@ -1,7 +1,7 @@
 <html>
 <meta charset="utf-8">
 <head>
-  <script src="jquery-1.11.2.min.js">
+  <script src="jquery-3.7.0.min.js">
   </script>
 </head>
 <style>
@@ -10,8 +10,10 @@
 </style>
 <body>
   <script src="script.js"></script>
-  <input type="file" id="fileinput" accept='.csv'/>
-  <input type="file" id="fileinput2" accept='.csv'/>
+  <label for="filekauf">Käufe</label>
+  <input type="file" id="filekauf" accept='.csv'/>
+  <label for="fileverkauf">Verkäufe</label>
+  <input type="file" id="fileverkauf" accept='.csv'/>
   <input type='button' id='btnLoad' value='Load' onclick='handleFileSelect();'>
   <div id="out">
   </div>

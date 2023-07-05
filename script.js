@@ -4,40 +4,66 @@ function handleFileSelect()
     alert('The File APIs are not fully supported in this browser.');
     return;
   }
+  document.getElementById('btnLoad').disabled=true;
 
-  input = document.getElementById('fileinput');
+  CSV={ 'kauf' : { 'coin' : '', 'symbol' : '', 'data' : '', 'array' : [] }, 'verkauf' : { 'coin' : '', 'symbol' : '', 'data' : '', 'array' : [] } };
+
+  if(!fileinp('filekauf')) return false;
+  setTimeout( function(){ fileinp('fileverkauf'); },1000 );
+  setTimeout( 
+    function(){ 
+      console.log( CSV );
+      if( CSV['kauf'].symbol == CSV['verkauf'].symbol && CSV['kauf'].coin == CSV['verkauf'].coin && CSV['kauf'].array.length > 0 && CSV['verkauf'].array.length > 0 ){
+        load_content( CSV['kauf'] );
+      } else if( CSV['verkauf'].symbol == '' ) {
+        return false;
+      } else {
+        alert('Dateinamen müssen identisch sein und sich nur durch den Anhang _kauf und _verkauf unterscheiden!\n\nFormat <symbol>_<coin>_<kauf|verkauf>.csv definiert sein!');
+      }
+    },2000 
+  );
+
+  document.getElementById('btnLoad').disabled=false;
+
+}
+
+function fileinp(file){
+
+  input = document.getElementById(file);
   if (!input) {
-    alert("Um, couldn't find the fileinput element.");
+    alert('Konnte kein fileinput-Element finden! Bitte an den Entwickler wenden!');
+    return false;
   }
   else if (!input.files) {
-    alert("This browser doesn't seem to support the `files` property of file inputs.");
+    alert('Dein Browser scheint input.files nicht zu unterstützen! Bitte versuche es mit einem anderen Browser, z.B. FireFox oder Chrome(ium)' );
+    return false;
   }
   else if (!input.files[0]) {
-    alert("Please select a file before clicking 'Load'");
+    alert('Bitte wähle für den Kauf und Verkauf jeweils eine csv-Datei aus, bevor du Load klickst!');
+    return false;
   }
   else {
 
-    CSV={ 'buy' : { 'coin' : '', 'data' : '', 'array' : [] }, 'sell' : { 'coin' : '', 'data' : '', 'array' : [] } };
-
-    file = document.getElementById('fileinput').files[0];
-    file2 = document.getElementById('fileinput2').files[0];
+    file = document.getElementById(file).files[0];
 
     fr = new FileReader();
     fr.onload = function(fr){ receivedText(file.name) }
     fr.readAsText(file);
 
-    fr2 = new FileReader();
-    fr2.onload = function(fr2){ receivedText(file2.name) }
-    fr2.readAsText(file2);
   }
+  return true;
 }
 
 function receivedText(fn) {
+  
   var F=fn.split(/_/g);
-  if( F.length == 2 ){
-    FF=F[1].split(/\./g);
-    if( FF[0] == 'buy' || FF[0] == 'sell' ){
-      CSV[FF[0]].coin=F[0];
+  if( F.length > 2 ){
+
+    FF=F.slice(-1)[0].split(/\./g);
+    if( FF[0] == 'kauf' || FF[0] == 'verkauf' ){
+
+      CSV[FF[0]].symbol=F[0];
+      CSV[FF[0]].coin=F.slice(1,-1).join(' ');
       CSV[FF[0]].data=fr.result.split("\n");
       CSV[FF[0]].array=[];
 
@@ -63,21 +89,17 @@ function receivedText(fn) {
         }
       );
 
-      if( FF[0] == 'buy'){
+      if( FF[0] == 'kauf'){
         JB=CSV[FF[0]].array;
-      } else {
+      } else if( FF[0] == 'verkauf' ) {
         JS=CSV[FF[0]].array;
       }
 
-      if( CSV['buy'].coin == CSV['sell'].coin && CSV['buy'].array.length > 0 && CSV['sell'].array.length > 0 ){
-        load_content( CSV['buy'].coin );
-      }
-
     } else {
-      alert( 'filename must be in format <coin>_<buy|sell>.csv' );
+      alert( 'Dateiname muss nach dem Format <symbol>_<coin>_<kauf|verkauf>.csv definiert sein!' );
     }
   } else {
-    alert( 'filename must be in format <coin>_<buy|sell>.csv' );
+    alert( 'Dateiname muss nach dem Format <symbol>_<coin>_<kauf|verkauf>.csv definiert sein!' );
   }
 }
 
@@ -86,63 +108,7 @@ var JB=[];
 var JS=[];
 var bestand=0;
 
-function load_content( coin ){
-
-  switch(coin.toUpperCase()){
-
-    case "SC":
-      coindesc="Siacoin";
-    break;
-    case "BTC":
-      coindesc="Bitcoin";
-    break;
-    case "BCH":
-      coindesc="Bitcoin Cash";
-    break;
-    case "BTG":
-      coindesc="Bitcoin Gold";
-    break;
-    case "DASH":
-      coindesc="Dash";
-    break;
-    case "DCR":
-      coindesc="Decred";
-    break;
-    case "ETH":
-      coindesc="Ethereum";
-    break;
-    case "FAIR":
-      coindesc="Faircoin";
-    break;
-    case "BLK":
-      coindesc="Blackcoin";
-    break;
-    case "MAID":
-      coindesc="Maidsafe";
-    break;
-    case "NAV":
-      coindesc="Navcoin";
-    break;
-    case "XRP":
-      coindesc="Ripple";
-    break;
-    case "XEM":
-      coindesc="NEM";
-    break;
-    case "MANNA":
-      coindesc="Manna";
-    break;
-    case "IOTA":
-      coindesc="IOTA";
-    break;
-    case "BSV":
-      coindesc="Bitcoin SV";
-    break;
-    case "AUR":
-      coindesc="Auroracoin";
-    break;
-
-  }
+function load_content( coin, filter = '' ){
 
   var t="";
   //t+="<h1>" + String.toUpperCase(coin) + " ( " + coindesc + " )</h1>";
@@ -159,56 +125,44 @@ function load_content( coin ){
   var JBi=0;
   var JSi=0;
 
-
-
-
   var timestamp_=0;
   var flag_buy=false;
-
-  while( JBi < JB.length - 1 || JSi < JS.length - 1 ){
-    console.log( JBi, JSi );
+  var lastJBi=-1;
+  var lastJSi=-1;
+  while( JBi < JB.length - 1 || JSi <= JS.length - 1 ){
 
     if( JBi < JB.length ){
       if( JS.length == 0 ){
-        console.log('1');
         timestamp_=JB[JBi].timestamp;
         flag_buy=true;
       } else if ( ! JS[0].timestamp > 0 ){
-        console.log('2');
         timestamp_=JB[JBi].timestamp;
         flag_buy=true;
       } else if( ((JS[JSi] != undefined ) ? JB[JBi].timestamp <= JS[JSi].timestamp : true ) ){
-        console.log('3');
         timestamp_=JB[JBi].timestamp;
         flag_buy=true;
       } else {
-        console.log('4');
         timestamp_=JS[JSi].timestamp;
         flag_buy=false;
       }
     } else {
-      console.log('5');
 	     timestamp_=JS[JSi].timestamp;
        flag_buy=false;
     }
 
-    //var timestamp_=( id_open < JB.length - 1 ) ? JB[id_open].timestamp : timestamp_+1000*3600*24;
-    //var timestamp__=( JS.length > 0 ) ? JS[0].timestamp : timestamp_;
-    //	console.log( lastyear, new Date(timestamp_), new Date(timestamp__) );
-
     if( lastyear < new Date( timestamp_ ).getFullYear() ){
 
-      if( lastyear>0){
+      if( lastyear>0 && filter == '' ){
         t+="<h3>Kauf...................: " + pad.slice( parseInt( kaufyear ).toString().length ) + kaufyear.toFixed(2) + " EUR</h3>";
         t+="<h3>Verkauf................: " + pad.slice( parseInt( verkaufyear ).toString().length ) + verkaufyear.toFixed(2) + " EUR</h3>";
         t+="<h3>Gewinn/Verlust.........: " + pad.slice( parseInt( gvyear ).toString().length ) + gvyear.toFixed(2) + " EUR</h3>";
         t+="<h3>zu versteuernder Ertrag: " + pad.slice( parseInt( taxyear ).toString().length ) + taxyear.toFixed(2) + " EUR</h3>";
-        t+="<h3>Bestand (31.12." + lastyear + ")...: " + pad.slice( parseInt( bestand ).toString().length ) + bestand.toFixed(8) + " " + coin.toUpperCase() + "</h3><br>";
+        t+="<h3>Bestand (31.12." + lastyear + ")...: " + pad.slice( parseInt( bestand ).toString().length ) + bestand.toFixed(8) + " " + coin.symbol.toUpperCase() + "</h3><br>";
         t+="<div class=\"pagebreak\"> </div>";
       }
 
       t+="<hr>";
-      t+="<h1>" + coin.toUpperCase() + " ( " + coindesc + " )</h1>";
+      t+="<h1>" + coin.symbol.toUpperCase() + " ( " + coin.coin + " )</h1>";
       t+="<h1>" + new Date( timestamp_ ).getFullYear() + "</h1><br>";
       lastyear=new Date( timestamp_ ).getFullYear();
       taxyear=0;
@@ -219,17 +173,16 @@ function load_content( coin ){
     }
 
 
-
     if( flag_buy ){
 
-      if( id_open < JB.length - 1 ){
+      if( id_open < JB.length ){
         var c=JB[id_open];
 
-        t+="TRADE-ID:" + pad.slice( parseInt(id_open+1).toString().length ) + (id_open+1) + " [ eröffnet ]<br>";
+        t+="<span style='display:"+(( c.info.match( eval( '/'+filter+'/ig' ) ) != null ) ? '' : 'none' )+";'>TRADE-ID:" + pad.slice( parseInt(id_open+1).toString().length ) + (id_open+1) + " [ eröffnet ]<br>";
         var kauf=c.amount * c.price;
-        t+=pad.slice( parseInt( c.amount ).toString().length )  + "<b>" + c.amount.toFixed(8) + " " + coin.toUpperCase() + "</b><br>";
+        t+=pad.slice( parseInt( c.amount ).toString().length )  + "<b>" + c.amount.toFixed(8) + " " + coin.symbol.toUpperCase() + "</b><br>";
         t+=c.date + " &nbsp;&nbsp;&nbsp;kauf zu " + pad.slice( parseInt( c.price ).toString().length ) + c.price.toFixed(2) + " EUR ( " + pad.slice( parseInt( kauf ).toString().length ) + (kauf).toFixed(2) + " EUR ) <i>" + c.info + "</i><br>";
-        t+="<br>";
+        t+="<br></span>";
 
         bestand+=c.amount;
 
@@ -245,12 +198,13 @@ function load_content( coin ){
 
       var a=JS[JSi];
 
-      while( JS[JSi].open > 0 && id_closed < JB.length-1 ){
+      while( JS[JSi].open > 0 && id_closed <= JB.length-1 ){
 
         var b=JB[id_closed];
 
         if( b.open >= a.open ){
-          t+=pad.slice( parseInt( a.open ).toString().length ) + "" + a.open.toFixed(8) + " " + coin.toUpperCase() + "<br>";
+
+          t+="<span style='display:"+(( a.info.match( eval( '/'+filter+'/ig' ) ) != null ) ? '' : 'none' )+";'>"+pad.slice( parseInt( a.open ).toString().length ) + "" + a.open.toFixed(8) + " " + coin.symbol.toUpperCase() + "<br>";
           var kauf=a.open * b.price;
           var verkauf=a.open * a.price;
           var gv=verkauf - kauf;
@@ -260,7 +214,7 @@ function load_content( coin ){
           t+=a.date + " verkauf zu " + pad.slice( parseInt( a.price ).toString().length ) + a.price.toFixed(2) + " EUR ( " + pad.slice( parseInt( verkauf ).toString().length ) + (verkauf).toFixed(2) + " EUR ) <i>" + a.info + "</i><br>";
           var d=( a.timestamp - b.timestamp ) / 3600 / 24 / 1000;
           t+=d + " Tage " + ( ( d > taxfree ) ? " > 1 Jahr = steuerfrei" : ", zu versteuern: " + pad.slice( parseInt( gv ).toString().length ) + gv.toFixed(2) + " EUR" ) + "<br>";
-          t+="<br>";
+          t+="<br></span>";
           taxyear+=( d > taxfree ) ? 0 : gv;
           gvyear+=gv;
           verkaufyear+=verkauf;
@@ -269,13 +223,13 @@ function load_content( coin ){
 
           if( b.open == a.open ){
             t+="TRADE-ID:" + pad.slice( parseInt(id_closed+1).toString().length ) + (id_closed+1) + " [ geschlossen ]<br>";
-            t+=pad.slice( parseInt( b.amount ).toString().length )  + "<b>" + b.amount.toFixed(8) + " " + coin.toUpperCase() + "</b><br>";
+            t+=pad.slice( parseInt( b.amount ).toString().length )  + "<b>" + b.amount.toFixed(8) + " " + coin.symbol.toUpperCase() + "</b><br>";
             t+="<br>";
             id_closed++;
           }
 
         } else if( b.open < a.open ){
-          t+=pad.slice( parseInt( b.open ).toString().length ) + "" + b.open.toFixed(8) + " " + coin.toUpperCase() + "<br>";
+          t+="<span style='display:"+(( a.info.match( eval( '/'+filter+'/ig' ) ) != null ) ? '' : 'none' )+";'>"+pad.slice( parseInt( b.open ).toString().length ) + "" + b.open.toFixed(8) + " " + coin.symbol.toUpperCase() + "<br>";
           var kauf=b.open * b.price;
           var verkauf=b.open * a.price;
           var gv=verkauf - kauf;
@@ -291,8 +245,8 @@ function load_content( coin ){
           verkaufyear+=verkauf;
 
           t+="TRADE-ID:" + pad.slice( parseInt(id_closed+1).toString().length ) + (id_closed+1) + " [ geschlossen ]<br>";
-          t+=pad.slice( parseInt( b.amount ).toString().length )  + "<b>" + b.amount.toFixed(8) + " " + coin.toUpperCase() + "</b><br>";
-          t+="<br>";
+          t+=pad.slice( parseInt( b.amount ).toString().length )  + "<b>" + b.amount.toFixed(8) + " " + coin.symbol.toUpperCase() + "</b><br>";
+          t+="<br></span>";
 
           a.open-=b.open;
           b.open=0;
@@ -302,13 +256,14 @@ function load_content( coin ){
         }
       }
       JSi++;
-      //JS.shift();
     }
   }
-  t+="<h3>Kauf...................: " + pad.slice( parseInt( kaufyear ).toString().length ) + kaufyear.toFixed(2) + " EUR</h3>";
-  t+="<h3>Verkauf................: " + pad.slice( parseInt( verkaufyear ).toString().length ) + verkaufyear.toFixed(2) + " EUR</h3>";
-  t+="<h3>Gewinn/Verlust.........: " + pad.slice( parseInt( gvyear ).toString().length ) + gvyear.toFixed(2) + " EUR</h3>";
-  t+="<h3>zu versteuernder Ertrag: " + pad.slice( parseInt( taxyear ).toString().length ) + taxyear.toFixed(2) + " EUR</h3>";
+  if( filter == '' ){
+    t+="<h3>Kauf...................: " + pad.slice( parseInt( kaufyear ).toString().length ) + kaufyear.toFixed(2) + " EUR</h3>";
+    t+="<h3>Verkauf................: " + pad.slice( parseInt( verkaufyear ).toString().length ) + verkaufyear.toFixed(2) + " EUR</h3>";
+    t+="<h3>Gewinn/Verlust.........: " + pad.slice( parseInt( gvyear ).toString().length ) + gvyear.toFixed(2) + " EUR</h3>";
+    t+="<h3>zu versteuernder Ertrag: " + pad.slice( parseInt( taxyear ).toString().length ) + taxyear.toFixed(2) + " EUR</h3>";
+  }
 
   var op=0;
   JB.forEach(
@@ -316,9 +271,10 @@ function load_content( coin ){
       if( v.open >= 0 ) op += v.open;
     }
   );
-  t+="<h3>Bestand (31.12." + lastyear + ")...: " + pad.slice( parseInt( bestand ).toString().length ) + bestand.toFixed(8) + " " + coin.toUpperCase() + "</h3><br>";
 
-
+  if( filter == '' ){
+    t+="<h3>Bestand (31.12." + lastyear + ")...: " + pad.slice( parseInt( bestand ).toString().length ) + bestand.toFixed(8) + " " + coin.symbol.toUpperCase() + "</h3><br>";
+  }
 
   $("#out").html(t);
 
