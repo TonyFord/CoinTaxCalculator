@@ -7,14 +7,24 @@
 <style>
   body { font-family:monospace; }
   .pagebreak { page-break-before: always; }
+
+  @media print
+  {    
+      .no-print, .no-print *
+      {
+          display: none !important;
+      }
+  }
 </style>
 <body>
-  <script src="script.js"></script>
-  <label for="filekauf">Käufe</label>
-  <input type="file" id="filekauf" accept='.csv'/>
-  <label for="fileverkauf">Verkäufe</label>
-  <input type="file" id="fileverkauf" accept='.csv'/>
-  <input type='button' id='btnLoad' value='Load' onclick='handleFileSelect();'>
+  <div class="no-print">
+    <script src="script.js"></script>
+    <label for="filekauf">Käufe</label>
+    <input type="file" id="filekauf" accept='.csv'/>
+    <label for="fileverkauf">Verkäufe</label>
+    <input type="file" id="fileverkauf" accept='.csv'/>
+    <input type='button' id='btnLoad' value='Load' onclick='handleFileSelect();'>
+  </div>
   <div id="out">
   </div>
 </body>

@@ -7,12 +7,12 @@ function handleFileSelect()
   document.getElementById('btnLoad').disabled=true;
 
   CSV={ 'kauf' : { 'coin' : '', 'symbol' : '', 'data' : '', 'array' : [] }, 'verkauf' : { 'coin' : '', 'symbol' : '', 'data' : '', 'array' : [] } };
-
+  bestand=0;
+  
   if(!fileinp('filekauf')) return false;
   setTimeout( function(){ fileinp('fileverkauf'); },1000 );
   setTimeout( 
     function(){ 
-      console.log( CSV );
       if( CSV['kauf'].symbol == CSV['verkauf'].symbol && CSV['kauf'].coin == CSV['verkauf'].coin && CSV['kauf'].array.length > 0 && CSV['verkauf'].array.length > 0 ){
         load_content( CSV['kauf'] );
       } else if( CSV['verkauf'].symbol == '' ) {
